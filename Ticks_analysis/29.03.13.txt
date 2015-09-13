@@ -1,0 +1,159 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.IO;
+
+namespace Ticks_analysis
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        StreamReader myFile;
+        StreamWriter OutFile;
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string datastring = null;
+            string[] dataArray;
+            int ii_minus = 0, ii_plus = 0, count, switch_ = 0, max_count = 0;
+
+            int flag_Ask_avg_F_6 = 0;
+
+            
+
+            double[] time_sec = new double[20], Diff_seconds = new double[20], Aks = new double[20], Ask_increment = new double[20], Ask_Speed = new double[20], Ask_V_by_3 = new double[20], Ask_V_by_6 = new double[20],
+                     Ask_F_by_3 = new double[20], Ask_F_by_6 = new double[20], Ask_V_avg_by_3 = new double[20], Ask_V_avg_by_6 = new double[20], Ask_F_avg_by_3 = new double[20], Ask_F_avg_by_6 = new double[20];
+
+
+            switch_ = 2903;
+
+            if (switch_ == 2703)
+            {
+                myFile = new StreamReader("D://Ticks//Ticks_Log_2013.03.27_filt.txt");
+                OutFile = new StreamWriter("D://Ticks//Ticks_Log_2013.03.27_filt_proc.txt");
+                max_count = 39500;
+            }
+            if (switch_ == 2903)
+            {
+                myFile = new StreamReader("D://Ticks//Ticks_Log_2013.03.29_not_full.txt");
+                OutFile = new StreamWriter("D://Ticks//Ticks_Log_2013.03.29_not_full_proc.txt");
+                max_count = 9000;
+            }
+
+            datastring = myFile.ReadLine();
+            OutFile.WriteLine(datastring + " flag_Ask_increment" + " flag_Ask_avg_F_6");
+
+
+            for (int i = 0; i < max_count; i++)
+            {
+                datastring = myFile.ReadLine();
+                dataArray = datastring.Split(' ');
+
+                for (int j = 0; j < 19; j++)
+                {
+                    time_sec[j] = time_sec[j+1];
+                    Diff_seconds[j] = Diff_seconds[j + 1];
+                    Aks[j] = Aks[j + 1];
+                    Ask_increment[j] = Ask_increment[j + 1];
+                    Ask_Speed[j] = Ask_Speed[j + 1];
+                    Ask_V_by_3[j] = Ask_V_by_3[j + 1];
+                    Ask_V_by_6[j] = Ask_V_by_6[j + 1];
+                    Ask_F_by_3[j] = Ask_F_by_3[j + 1];
+                    Ask_F_by_6[j] = Ask_F_by_6[j + 1];
+                    Ask_V_avg_by_3[j] = Ask_V_avg_by_3[j + 1];
+                    Ask_V_avg_by_6[j] = Ask_V_avg_by_6[j + 1];
+                    Ask_F_avg_by_3[j] = Ask_F_avg_by_3[j + 1];
+                    Ask_F_avg_by_6[j] = Ask_F_avg_by_6[j + 1];
+                }
+
+                time_sec[19] = Convert.ToDouble(dataArray[1]);
+                Diff_seconds[19] = Convert.ToDouble(dataArray[4]);
+                Aks[19] = Convert.ToDouble(dataArray[5]);
+                Ask_increment[19] = Convert.ToDouble(dataArray[6]);
+                Ask_Speed[19] = Convert.ToDouble(dataArray[7]);
+                Ask_V_by_3[19] = Convert.ToDouble(dataArray[12]);
+                Ask_V_by_6[19] = Convert.ToDouble(dataArray[13]);
+                Ask_F_by_3[19] = Convert.ToDouble(dataArray[14]);
+                Ask_F_by_6[19] = Convert.ToDouble(dataArray[15]);
+                Ask_V_avg_by_3[19] = Convert.ToDouble(dataArray[16]);
+                Ask_V_avg_by_6[19] = Convert.ToDouble(dataArray[17]);
+                Ask_F_avg_by_3[19] = Convert.ToDouble(dataArray[18]);
+                Ask_F_avg_by_6[19] = Convert.ToDouble(dataArray[19]);
+
+
+
+                //------
+
+                count = 15;
+                ii_minus = 0; 
+                ii_plus = 0;
+                int flag_Ask_increment = 0;
+                for (int j = 0; j < count; j++)
+                {
+                    if (Ask_increment[19 - j] < 0)
+                        ii_minus++;
+                    if (Ask_increment[19 - j] > 0)
+                        ii_plus++;
+                }
+                if (ii_minus == count)
+                    flag_Ask_increment = -1;
+                else if (ii_plus == count)
+                    flag_Ask_increment = 1;
+                else
+                    flag_Ask_increment = 0;
+
+                //------
+
+                count = 6;
+                if (flag_Ask_avg_F_6 == 0 || flag_Ask_avg_F_6 == -2 || flag_Ask_avg_F_6 == 2)
+                {
+                    ii_minus = 0;
+                    ii_plus = 0;
+                    for (int j = 0; j < count; j++)
+                    {
+                        if (Ask_F_avg_by_6[19 - j] < -4.0)
+                            ii_minus++;
+                        if (Ask_F_avg_by_6[19 - j] > 4.0)
+                            ii_plus++;
+                    }
+                    if (ii_minus == count)
+                        flag_Ask_avg_F_6 = -1;
+                    else if (ii_plus == count)
+                        flag_Ask_avg_F_6 = 1;
+                    else
+                        flag_Ask_avg_F_6 = 0;
+                }
+                else
+                {
+                    if (flag_Ask_avg_F_6 == -1 && Ask_F_avg_by_6[19] > 0.0)
+                        flag_Ask_avg_F_6 = -2;
+
+                    if (flag_Ask_avg_F_6 == 1 && Ask_F_avg_by_6[19] < 0.0)
+                        flag_Ask_avg_F_6 = 2;
+                }
+
+                //------
+
+                OutFile.WriteLine(datastring + " " + flag_Ask_increment.ToString() + " " + flag_Ask_avg_F_6.ToString());
+            }
+
+            OutFile.Close();
+            this.Close();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            help_to_convert.convert_1();
+        }
+    }
+}

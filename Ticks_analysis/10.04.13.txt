@@ -1,0 +1,220 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.IO;
+
+namespace Ticks_analysis
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        StreamReader myFile;
+        StreamWriter OutFile;
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string datastring = null, switch_ = "";
+            string[] dataArray;
+            int ii_minus = 0, ii_plus = 0, count, max_count = 0;
+
+            int flag_Ask_avg_F_6 = 0, flag_Ask_V_by_6 = 0, flag_Ask_avg_F_3 = 0, flag_out = 0;
+
+            
+
+            double[] time_sec = new double[20], Diff_seconds = new double[20], Aks = new double[20], Ask_increment = new double[20], Ask_Speed = new double[20], Ask_V_by_3 = new double[20], Ask_V_by_6 = new double[20],
+                     Ask_F_by_3 = new double[20], Ask_F_by_6 = new double[20], Ask_V_avg_by_3 = new double[20], Ask_V_avg_by_6 = new double[20], Ask_F_avg_by_3 = new double[20], Ask_F_avg_by_6 = new double[20];
+
+
+            switch_ = this.text_in_file.Text + this.text_in_file_month.Text;
+
+            if (switch_ == "2703")
+            {
+                myFile = new StreamReader("D://Ticks//Ticks_Log_2013.03.27_filt.txt");
+                OutFile = new StreamWriter("D://Ticks//Ticks_Log_2013.03.27_filt_proc.txt");
+                max_count = 39500;
+            }
+            if (switch_ == "2803")
+            {
+                myFile = new StreamReader("D://Ticks//Ticks_Log_2013.03.28_filt.txt");
+                OutFile = new StreamWriter("D://Ticks//Ticks_Log_2013.03.28_filt_proc.txt");
+                max_count = 43100;
+            }
+            if (switch_ == "2903")
+            {
+                myFile = new StreamReader("D://Ticks//Ticks_Log_2013.03.29.txt");
+                OutFile = new StreamWriter("D://Ticks//Ticks_Log_2013.03.29_proc.txt");
+                max_count = 9000;
+            }
+
+            datastring = myFile.ReadLine();
+            OutFile.WriteLine(datastring + " flag_Ask_increment" + " flag_Ask_avg_F_6");
+
+
+            for (int i = 0; i < max_count; i++)
+            {
+                datastring = myFile.ReadLine();
+                dataArray = datastring.Split(' ');
+
+                for (int j = 0; j < 19; j++)
+                {
+                    time_sec[j] = time_sec[j+1];
+                    Diff_seconds[j] = Diff_seconds[j + 1];
+                    Aks[j] = Aks[j + 1];
+                    Ask_increment[j] = Ask_increment[j + 1];
+                    Ask_Speed[j] = Ask_Speed[j + 1];
+                    Ask_V_by_3[j] = Ask_V_by_3[j + 1];
+                    Ask_V_by_6[j] = Ask_V_by_6[j + 1];
+                    Ask_F_by_3[j] = Ask_F_by_3[j + 1];
+                    Ask_F_by_6[j] = Ask_F_by_6[j + 1];
+                    Ask_V_avg_by_3[j] = Ask_V_avg_by_3[j + 1];
+                    Ask_V_avg_by_6[j] = Ask_V_avg_by_6[j + 1];
+                    Ask_F_avg_by_3[j] = Ask_F_avg_by_3[j + 1];
+                    Ask_F_avg_by_6[j] = Ask_F_avg_by_6[j + 1];
+                }
+
+                time_sec[19] = Convert.ToDouble(dataArray[1]);
+                Diff_seconds[19] = Convert.ToDouble(dataArray[4]);
+                Aks[19] = Convert.ToDouble(dataArray[5]);
+                Ask_increment[19] = Convert.ToDouble(dataArray[6]);
+                Ask_Speed[19] = Convert.ToDouble(dataArray[7]);
+                Ask_V_by_3[19] = Convert.ToDouble(dataArray[12]);
+                Ask_V_by_6[19] = Convert.ToDouble(dataArray[13]);
+                Ask_F_by_3[19] = Convert.ToDouble(dataArray[14]);
+                Ask_F_by_6[19] = Convert.ToDouble(dataArray[15]);
+                Ask_V_avg_by_3[19] = Convert.ToDouble(dataArray[16]);
+                Ask_V_avg_by_6[19] = Convert.ToDouble(dataArray[17]);
+                Ask_F_avg_by_3[19] = Convert.ToDouble(dataArray[18]);
+                Ask_F_avg_by_6[19] = Convert.ToDouble(dataArray[19]);
+
+
+
+                //------
+
+                count = 11;
+                ii_minus = 0; 
+                ii_plus = 0;
+                int flag_Ask_increment = 0;
+                for (int j = 0; j < count; j++)
+                {
+                    if (Ask_increment[19 - j] < 0)
+                        ii_minus++;
+                    if (Ask_increment[19 - j] > 0)
+                        ii_plus++;
+                }
+                if (ii_minus == count)
+                    flag_Ask_increment = -1;
+                else if (ii_plus == count)
+                    flag_Ask_increment = 1;
+                else
+                    flag_Ask_increment = 0;
+
+                //------
+
+                flag_Ask_avg_F_6 = this.Start_and_Stop_Trade_FLG(flag_Ask_avg_F_6, Ask_Speed, /*count parameter*/ 6, Ask_F_avg_by_6, 19, 4.0, 0.0); flag_out = flag_Ask_avg_F_6;
+
+                //flag_Ask_avg_F_3 = this.Start_and_Stop_Trade_FLG(flag_Ask_avg_F_3, Ask_Speed, /*count parameter*/ 8, Ask_F_avg_by_3, 19, 5.0, 0.0); flag_out = flag_Ask_avg_F_3;
+                //if (flag_Ask_avg_F_3 == 2 && Ask_increment[19] >= -0.00001) flag_Ask_avg_F_3 = 1;
+                //if (flag_Ask_avg_F_3 == -2 && Ask_increment[19] <= 0.00001) flag_Ask_avg_F_3 = -1;
+
+                //flag_Ask_avg_F_6 = this.Start_and_Stop_Trade_FLG(flag_Ask_avg_F_6, Ask_Speed, /*count parameter*/ 10, Ask_F_avg_by_6, 19, 0.3, 0.0); flag_out = flag_Ask_avg_F_6;
+
+                //------
+
+                OutFile.WriteLine(datastring + " " + flag_Ask_increment.ToString() + " " + flag_out.ToString());
+            }
+
+            OutFile.Close();
+            this.Close();
+        }
+
+
+//int count = 4;
+//       if (flag_Ask_avg_F_6 == 0 || flag_Ask_avg_F_6 == -2 || flag_Ask_avg_F_6 == 2)
+//       {
+//           ii_minus = 0;
+//           ii_plus = 0;
+//           for (j = 0; j < count; j++)
+//           {
+//               if (Ask_Accs_avg_by_6[dim-1 - j] < -6.0)
+//                   ii_minus++;
+//               if (Ask_Accs_avg_by_6[dim-1 - j] > 6.0)
+//                   ii_plus++;
+//           }
+//           if (ii_minus == count && Ask_Speed_array[dim-1] < 0.0)
+//           {
+//               flag_Ask_avg_F_6 = -1;
+//               //ticket=OrderSend(Symbol(),OP_SELL,1,Bid,3,0,0,"My order #",0,0,Red);
+//           }
+//           else if (ii_plus == count && Ask_Speed_array[dim-1] > 0.0)
+//           {
+//               flag_Ask_avg_F_6 = 1;
+//               //ticket=OrderSend(Symbol(),OP_BUY,1,Ask,3,0,0,"My order #",0,0,Green);
+//           }
+//           else
+//               flag_Ask_avg_F_6 = 0;
+//       }
+//       else
+//       {
+//           if (flag_Ask_avg_F_6 == -1 && Ask_Accs_avg_by_6[dim-1] > 0.00001)
+//           {
+//               flag_Ask_avg_F_6 = -2;
+//               //OrderClose(ticket,1,Ask,3,Red);
+//           }
+
+//           if (flag_Ask_avg_F_6 == 1 && Ask_Accs_avg_by_6[dim-1] < -0.00001)
+//           {
+//               flag_Ask_avg_F_6 = 2;
+//               //OrderClose(ticket,1,Bid,3,Green);
+//           }
+//       }
+
+
+
+        private int Start_and_Stop_Trade_FLG(int cur_in_flg, double[] Ask_Speed, int count_parameter, double[] cur_in_Array, int Array_dim, double Slice_Criteria_IN, double Slice_Criteria_OUT)
+        {
+            if (cur_in_flg == 0 || cur_in_flg == -2 || cur_in_flg == 2)
+            {
+                int ii_minus = 0;
+                int ii_plus = 0;
+                for (int j = 0; j < count_parameter; j++)
+                {
+                    if (cur_in_Array[Array_dim - j] < -Slice_Criteria_IN)
+                        ii_minus++;
+                    if (cur_in_Array[Array_dim - j] > Slice_Criteria_IN)
+                        ii_plus++;
+                }
+                if (ii_minus == count_parameter && Ask_Speed[Array_dim] < 0.0)
+                    cur_in_flg = -1;
+                else if (ii_plus == count_parameter && Ask_Speed[Array_dim] > 0.0)
+                    cur_in_flg = 1;
+                else
+                    cur_in_flg = 0;
+            }
+            else
+            {
+                if (cur_in_flg == -1 && cur_in_Array[Array_dim] > Slice_Criteria_OUT)
+                    cur_in_flg = -2;
+
+                if (cur_in_flg == 1 && cur_in_Array[Array_dim] < Slice_Criteria_OUT)
+                    cur_in_flg = 2;
+            }
+
+            return cur_in_flg;
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            help_to_convert.convert_1();
+        }
+    }
+}

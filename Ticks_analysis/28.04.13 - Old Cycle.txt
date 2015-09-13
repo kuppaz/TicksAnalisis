@@ -1,0 +1,123 @@
+﻿private void Analyse_by_Cicle_Click(object sender, EventArgs e)
+        {
+            string datastring = null;
+            string[] dataArray;
+
+            StreamWriter ResultFile = new StreamWriter("D://Ticks//Ticks_Agregate_by_Indicator_Cycle.txt");
+
+            //for (int count = 4; count < 8; count++)
+            for (int count = 7; count < 8; count++)
+            {
+                //for (int slice = 0; slice < 10; slice++)
+                for (int slice = 9; slice < 10; slice++)
+                {
+                    //for (int t = 25; t < 75; t++)
+                    for (int t = 20; t < 35; t++)
+                    {
+                        StreamReader baseFile = new StreamReader("D://Ticks//Ticks_all_base.txt");
+
+                        Ticks_In TicksIn = new Ticks_In();
+                        Ticks_Out TicksOut = new Ticks_Out();
+
+                        int dim = TicksIn.dim - 1;
+                        for (int i = 0; i < dim + 1; i++) TicksIn.timeStep[i] = 1;
+
+                        int flg_F_avg_6 = 0;
+                        double ticks_sum = 0;
+                        double local_Open_vs_Cur = 0;
+                        int flg_was_local_min = 0;
+
+                        datastring = baseFile.ReadLine();
+
+                        for (int i = 0; ; i++)
+                        {
+                            if (baseFile.EndOfStream == true) break;
+
+                            datastring = baseFile.ReadLine();
+                            dataArray = datastring.Split(' ');
+
+                            TicksIn.Count = TicksIn.Count + 1;
+                            TicksIn.CurTime = dataArray[2];
+
+                            for (int j = 0; j < dim; j++)
+                            {
+                                TicksIn.timeStep[j] = TicksIn.timeStep[j + 1];
+                                TicksIn.Ask[j] = TicksIn.Ask[j + 1];
+                                TicksIn.Bid[j] = TicksIn.Bid[j + 1];
+                                TicksIn.AskIncrement[j] = TicksIn.AskIncrement[j + 1];
+                                TicksIn.BidIncrement[j] = TicksIn.BidIncrement[j + 1];
+
+                                TicksOut.AskSpeed[j] = TicksOut.AskSpeed[j + 1];
+                                TicksOut.Ask_V_3[j] = TicksOut.Ask_V_3[j + 1];
+                                TicksOut.Ask_V_6[j] = TicksOut.Ask_V_6[j + 1];
+                                TicksOut.Ask_V_avg_3[j] = TicksOut.Ask_V_avg_3[j + 1];
+                                TicksOut.Ask_V_avg_6[j] = TicksOut.Ask_V_avg_6[j + 1];
+                                TicksOut.Ask_F_avg_3[j] = TicksOut.Ask_F_avg_3[j + 1];
+                                TicksOut.Ask_F_avg_6[j] = TicksOut.Ask_F_avg_6[j + 1];
+                            }
+
+                            TicksIn.timeStep[dim] = Convert.ToDouble(dataArray[3]);
+                            TicksIn.Ask[dim] = Convert.ToDouble(dataArray[4]);
+                            TicksIn.Bid[dim] = Convert.ToDouble(dataArray[6]);
+                            TicksIn.AskIncrement[dim] = Convert.ToDouble(dataArray[5]);
+                            TicksIn.BidIncrement[dim] = Convert.ToDouble(dataArray[7]);
+
+                            //Вычисление индикаторов//
+
+                            double summ_dt_3 = TicksIn.timeStep[dim] + TicksIn.timeStep[dim - 1] + TicksIn.timeStep[dim - 2];
+                            double summ_dt_6 = TicksIn.timeStep[dim - 3] + TicksIn.timeStep[dim - 4] + TicksIn.timeStep[dim - 5] + summ_dt_3;
+
+                            TicksOut.AskSpeed[dim] = TicksIn.AskIncrement[dim] / TicksIn.timeStep[dim];
+                            TicksOut.Ask_V_3[dim] = (TicksOut.AskSpeed[dim] + TicksOut.AskSpeed[dim - 1] + TicksOut.AskSpeed[dim - 2]) / 3.0;
+                            TicksOut.Ask_V_6[dim] = (TicksOut.AskSpeed[dim - 3] + TicksOut.AskSpeed[dim - 4] + TicksOut.AskSpeed[dim - 5] + TicksOut.Ask_V_3[dim] * 3.0) / 6.0;
+
+                            TicksOut.Ask_V_avg_3[dim] = (TicksIn.AskIncrement[dim] + TicksIn.AskIncrement[dim - 1] + TicksIn.AskIncrement[dim - 2]) / summ_dt_3 * 100000;
+                            TicksOut.Ask_V_avg_6[dim] = (TicksIn.AskIncrement[dim] + TicksIn.AskIncrement[dim - 1] + TicksIn.AskIncrement[dim - 2] + TicksIn.AskIncrement[dim - 3] + TicksIn.AskIncrement[dim - 4] + TicksIn.AskIncrement[dim - 5]) / summ_dt_6 * 100000;
+                            TicksOut.Ask_F_avg_3[dim] = TicksOut.Ask_V_avg_3[dim] / summ_dt_3;
+                            TicksOut.Ask_F_avg_6[dim] = TicksOut.Ask_V_avg_6[dim] / summ_dt_6;
+
+                            //------------//
+                            //------------//
+
+                            if (count >= 10) break;
+
+                            if (flg_F_avg_6 == 1)
+                            {
+                                local_Open_vs_Cur = TicksIn.Bid[dim] - TicksOut.OpenASK;
+                            }
+                            if (flg_F_avg_6 == -1)
+                            {
+                                local_Open_vs_Cur = TicksOut.OpenBID - TicksIn.Ask[dim];
+                            }
+
+                            if (local_Open_vs_Cur < -0.00030) flg_was_local_min = 1;
+
+                            //для flg_F_avg_6 диапазон count_parameter от [5 до 8], диапазон Slice_IN от [3 до 6], диапазон slice [0, 6]
+                            flg_F_avg_6 = Start_and_Stop_Trade_FLG(TicksIn, TicksOut, flg_F_avg_6, count, TicksOut.Ask_F_avg_6, t / 10.0, TicksIn.AskIncrement, slice / 100000.0, local_Open_vs_Cur, flg_was_local_min);
+
+                            if (Math.Abs(flg_F_avg_6) == 2)
+                            {
+                                if (flg_F_avg_6 == 2)
+                                {
+                                    flg_was_local_min = 0;
+                                    ticks_sum = ticks_sum + TicksIn.Bid[dim] - TicksOut.OpenASK;
+                                }
+
+                                if (flg_F_avg_6 == -2)
+                                {
+                                    flg_was_local_min = 0;
+                                    ticks_sum = ticks_sum + TicksOut.OpenBID - TicksIn.Ask[dim];
+                                }
+                            }
+                        }
+
+                        baseFile.Close();
+                        Console.WriteLine((count).ToString() + " " + (slice / 100000.0).ToString() + " " + (t / 10.0).ToString());
+                        ResultFile.WriteLine((count).ToString() + " " + slice.ToString() + " " + (t / 10.0).ToString() + " " + ticks_sum.ToString());
+                    }
+                }
+            }
+
+            ResultFile.Close();
+            this.Close();
+        }
